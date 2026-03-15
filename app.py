@@ -7,26 +7,36 @@ st.title("🤖 LLM Sentiment Analysis")
 st.write("This dashboard uses a pre-trained Large Language Model (Hugging Face) to understand the context of your text.")
 
 # --- 2. LOAD THE LLM ---
-# @st.cache_resource ensures the heavy model is only downloaded and loaded into memory ONCE.
 @st.cache_resource
 def load_model():
-    # By default, this loads a distilled BERT model fine-tuned for sentiment analysis
     return pipeline("sentiment-analysis")
 
-with st.spinner("Loading the LLM into memory... (This takes a moment on startup)"):
+with st.spinner("Loading the LLM into memory..."):
     sentiment_analyzer = load_model()
 
-# --- 3. APP INTERFACE ---
+# --- 3. APP SETTINGS (NEW FEATURE) ---
+st.divider()
+st.subheader("⚙️ App Settings")
+st.write("Adjust how confident the model needs to be to make a definitive prediction.")
+
+# The Slider Element
+threshold = st.slider(
+    "Confidence Threshold", 
+    min_value=0.50, 
+    max_value=1.00, 
+    value=0.70, 
+    help="If the model's confidence is below this number, the result will be marked as 'Neutral/Unsure'."
+)
+
+# --- 4. APP INTERFACE ---
 st.divider()
 st.subheader("Test the Model")
 
-# User Input
 user_input = st.text_area(
     "Type a sentence or review here:", 
-    "The food was a bit cold, but the waiters were so incredibly sweet!"
+    "The food was okay, I guess."
 )
 
-# Prediction Button
 if st.button("Analyze Sentiment"):
     if user_input.strip():
         # Run the LLM
@@ -36,8 +46,11 @@ if st.button("Analyze Sentiment"):
         label = result['label']
         confidence = result['score']
         
-        # Display Results
-        if label == "POSITIVE":
+        # NEW LOGIC: Check against the slider threshold
+        if confidence < threshold:
+            st.warning(f"**Prediction:** NEUTRAL / UNSURE 🟡")
+            st.info(f"**Model Confidence:** {confidence:.2%} (Below your {threshold:.2%} threshold)")
+        elif label == "POSITIVE":
             st.success(f"**Prediction:** {label} 🟢")
             st.info(f"**Model Confidence:** {confidence:.2%}")
         else:
@@ -46,11 +59,3 @@ if st.button("Analyze Sentiment"):
             
     else:
         st.warning("Please enter some text to analyze.")
-
-# --- 4. HOW IT WORKS ---
-st.divider()
-with st.expander("How is this different from the first version?"):
-    st.write("""
-    * **No Training Data Needed:** We didn't have to provide a list of hardcoded sentences. The model was pre-trained on massive datasets.
-    * **Context Aware:** Unlike `CountVectorizer` which just counts words, this Transformer model understands sentence structure. Try giving it sarcastic text or mixed reviews!
-    """)
