@@ -78,4 +78,6 @@ with tab2:
                 results = sentiment_analyzer(texts)
                 
                 # Add the results as new columns in the dataframe
-                df['LLM_Sentiment'] = [res['label'] for res
+                # CHANGE THEM TO EXACTLY THIS:
+                  df['LLM_Sentiment'] = [res['label'] for res in results]
+                  df['Confidence'] = [res['score'] for res in results]
